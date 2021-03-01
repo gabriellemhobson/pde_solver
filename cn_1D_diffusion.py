@@ -14,50 +14,53 @@ g0: left boundary condition (for the moment, a scalar)
 g1: right boundary condition (for the moment, a scalar)
 u0: initial condition (a vector)
 
+Sets up a sparse matrix A and uses scipy.sparse.linalg.spsolve(A,rhs) to solve
+
 """
 
 def cn_1D_diffusion(N,k,L,nt,g0,g1,u0):
-    
     # importing packages
     import numpy as np 
-    from scipy.linalg import solve
-    import time
+    import scipy as scipy
+    from scipy.sparse.linalg import spsolve
+    from time import perf_counter
     
-    t1 = time.time() # start timing
+    t1 = perf_counter() # start timing
     
     h = L/(N-1) # space step size
     r = k/(2*h**2) # define r, later used in matrix system
     
-    # create meshes
-#    x = np.linspace(0,N-1,N)*h 
+    # create mesh of time steps
     t = np.linspace(0,nt-1,nt)*k 
     
     # set up matrices for A x = b system
     
-    # A is tridiagonal, set it up directly 
+    # A is tridiagonal and sparse, set it up directly, 
+    # this creates a sparse matrix in CSR format
     rs = np.ones(N-1)*r # for the off diagonals
     main_diag = np.ones(N)*(1+2*r) # for the center diagonal
-    A = np.diag(-rs,k=-1) + np.diag(main_diag) + np.diag(-rs,k=1)
-    
-    # b needs to be computed based on nth time step of solution
-    def b(i,U):
-        return r*U[i] + (1 - 2*r)*U[i+1] + r*U[i+2]
-        # here U is just the vector at a specific time n
-        # this doesn't include first and last row
-    
+    A = scipy.sparse.diags([main_diag, -rs, -rs],[0,-1,1],format="csr")
+
     # create solution matrix of zeros
     U = np.zeros((N,int(nt)))
     # set first 'solution' to be the initial condition
     U[:,0] = u0
-    
-    for n in range(1,int(nt)-1):
-        rhs = b(np.arange(N-2),U[:,n-1])
-        rhs = np.insert(rhs,0,r*(g0(t[n]) + g0(t[n+1])) + (1-2*r)*U[1,n] + r*U[2,n])
-        rhs = np.append(rhs, r*U[-3,n] + (1-2*r)*U[-2,n] + r*(g1(t[n]) + g1(t[n+1])))
-        
-        U[:,n] = solve(A,rhs)
-    t2 = time.time()
-    
-    print(t2-t1)
+    # create rhs that we can fill in
+    rhs = np.zeros(N)
+    # iterate over time and at each time step create the rhs and solve
+    for n in range(int(nt)-1):
+        # first row of rhs vector, affected by boundary conditions
+        rhs[0] = r*(g0(t[n]) + g0(t[n+1])) + (1-2*r)*U[1,n] + r*U[2,n]
+        # second row to second-to-last row
+        for j in range(1,N-1):
+            rhs[j] = r*U[j-1,n] + (1 - 2*r)*U[j,n] + r*U[j+1,n]
+        # last row of rhs vector, affected by boundary conditions
+        rhs[-1] = r*U[-3,n] + (1-2*r)*U[-2,n] + r*(g1(t[n]) + g1(t[n+1]))
+        # using spsolve: currently A is in CSR form
+        U[:,n+1] = scipy.sparse.linalg.spsolve(A,rhs)
+
+    t2 = perf_counter()
+    dt = t2-t1
+    print('[scipy.sparse.linalg.spsolve] time',('%1.4e'%dt),'(sec)')
     
     return U
