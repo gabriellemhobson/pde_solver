@@ -54,11 +54,11 @@ def test_pde_cn():
 
 
 def test_cn():
-    N = 128 # number of grid points
+    N = 512 # number of grid points
     k = 1e-4 # time step
-    L = float(1) # length of grid
-    nt = 40 # number of time steps
-    kappa = 2
+    L = float(20) # length of grid
+    nt = 100 # number of time steps
+    kappa = 1
 
     # define boundary conditions
     def g0(t):
@@ -66,24 +66,34 @@ def test_cn():
 
     def g1(t):
         return 0 # 1.5 for other ic
-
+    
     # define initial condition
-    h = L/(N-1)
-    x = np.linspace(0,N-1,N)*h
-    u0 = 0.5*np.exp(-(x-0.5)**2 / (2*(1/8)**2))
+#    h = L/(N-1)
+#    x = np.linspace(0,N-1,N)*h
+#    u0 = 0.5*np.exp(-(x-0.5)**2 / (2*(1/8)**2))
     # trying out a different initial condition
 #    u0 = 2 - 1.5*x + np.sin(np.pi*x)
+
+    # define initial condition
+    x = np.linspace(-L/2,L/2,N)
+    u0 = np.exp(-x**2)
+    
+    def true(x,t):
+        return 1/(1+4*t)**(1/2)*np.exp(-x**2/(1+4*t))
+
     un = u0
     t = 0
     for j in range((nt)):
         un = solver.cn_1D_diffusion(N,k,L,t,g0,g1,kappa,un)
+        
+        print('error: ', np.linalg.norm(un-true(x,t)))
         t += k
         plt.clf()
-        plt.ylim(0,0.5)
+        plt.ylim(0,1)
         plt.plot(x,un)
+        plt.title(['t =', t])
         plt.show()
 
-        print(np.linalg.norm(un))
 
 if __name__ == '__main__':
     test_cn()

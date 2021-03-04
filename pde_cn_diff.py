@@ -47,7 +47,8 @@ def test_pde_cn():
     pde.step()
     
     U = pde.get_solution()
-    print(np.linalg.norm(U))
+    print('Solution: ', U)
+    print('solution norm', np.linalg.norm(U))
 
 
 def test_cn():
