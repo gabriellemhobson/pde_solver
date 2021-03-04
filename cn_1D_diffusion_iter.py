@@ -54,7 +54,7 @@ def cn_1D_diffusion(N,k,L,t,g0,g1,un):
     # create solution matrix of zeros
 #    U = np.zeros((N,int(nt)))
     # set first 'solution' to be the previous time step
-    U[:] = un
+    U = un
     # create rhs that we can fill in
     rhs = np.zeros(N)
     # iterate over time and at each time step create the rhs and solve
@@ -67,7 +67,7 @@ def cn_1D_diffusion(N,k,L,t,g0,g1,un):
     # last row of rhs vector, affected by boundary conditions
     rhs[-1] = r*U[-3] + (1-2*r)*U[-2] + r*(g1(t) + g1(t+k))
     # using spsolve: currently A is in CSR form
-    U_out[:] = scipy.sparse.linalg.spsolve(A,rhs)
+    U_out = scipy.sparse.linalg.spsolve(A,rhs)
 
     t2 = perf_counter()
     dt = t2-t1
