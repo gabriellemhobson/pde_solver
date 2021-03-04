@@ -20,6 +20,7 @@ L: length of grid
 t: current time step number
 g0: left boundary condition (for the moment, a scalar)
 g1: right boundary condition (for the moment, a scalar)
+kappa: the diffusion coefficient (constant for now)
 un: previous time step (a vector)
 
 Sets up a sparse matrix A and uses scipy.sparse.linalg.spsolve(A,rhs) to solve
@@ -28,7 +29,7 @@ Uses previous time step to find next time step.
 
 """
 
-def cn_1D_diffusion(N,k,L,t,g0,g1,un):
+def cn_1D_diffusion(N,k,L,t,g0,g1,kappa,un):
     # importing packages
     import numpy as np 
     import scipy as scipy
@@ -38,7 +39,7 @@ def cn_1D_diffusion(N,k,L,t,g0,g1,un):
     t1 = perf_counter() # start timing
     
     h = L/(N-1) # space step size
-    r = k/(2*h**2) # define r, later used in matrix system
+    r = k*kappa/(2*h**2) # define r, later used in matrix system
     
     # create mesh of time steps
 #    t = np.linspace(0,nt-1,nt)*k 
