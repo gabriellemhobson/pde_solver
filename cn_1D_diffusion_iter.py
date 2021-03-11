@@ -23,7 +23,7 @@ g1: right boundary condition (for the moment, a scalar)
 kappa: the diffusion coefficient (constant for now)
 un: previous time step (a vector)
 
-Sets up a sparse matrix A and uses scipy.sparse.linalg.spsolve(A,rhs) to solve
+Sets up a sparse matrix A and uses scipy.sparse.linalg.spsolve(A,b) to solve
 
 Uses previous time step to find next time step. 
 
@@ -41,37 +41,31 @@ def cn_1D_diffusion(N,k,L,t,g0,g1,kappa,un):
     h = L/(N-1) # space step size
     r = k*kappa/(2*h**2) # define r, later used in matrix system
     
-    # create mesh of time steps
-#    t = np.linspace(0,nt-1,nt)*k 
-    
     # set up matrices for A x = b system
     
     # A is tridiagonal and sparse, set it up directly, 
     # this creates a sparse matrix in CSR format
-    rs = np.ones(N-1)*r # for the off diagonals
-    main_diag = np.ones(N)*(1+2*r) # for the center diagonal
+    rs = np.zeros(N-1) # for the off diagonals
+    rs[1:-1] += r # for the off diagonals
+    main_diag = np.ones(N) # for the center diagonal
+    main_diag[1:-1] *= (1+2*r) 
     A = scipy.sparse.diags([main_diag, -rs, -rs],[0,-1,1],format="csr")
-
-    # create solution matrix of zeros
-#    U = np.zeros((N,int(nt)))
+    
     # set first 'solution' to be the previous time step
     U = un
     # create rhs that we can fill in
-    rhs = np.zeros(N)
-    # iterate over time and at each time step create the rhs and solve
-    #for n in range(int(nt)-1):
-    # first row of rhs vector, affected by boundary conditions
-    rhs[0] = r*(g0(t) + g0(t+k)) + (1-2*r)*U[1] + r*U[2]
+    b = np.zeros(N)
+    b[0] = g0(t+k) # meeting bc
+    b[1] = r*(g0(t) + g0(t+k)) + (1-2*r)*U[1] + r*U[2]
     # second row to second-to-last row
-    for j in range(1,N-1):
-        rhs[j] = r*U[j-1] + (1 - 2*r)*U[j] + r*U[j+1]
-    # last row of rhs vector, affected by boundary conditions
-    rhs[-1] = r*U[-3] + (1-2*r)*U[-2] + r*(g1(t) + g1(t+k))
+    for j in range(2,N-2):
+        b[j] = r*U[j-1] + (1 - 2*r)*U[j] + r*U[j+1]
+    b[-2] = r*U[-3] + (1-2*r)*U[-2] + r*(g1(t) + g1(t+k))
+    b[-1] = g1(t+k) # meeting bc
     # using spsolve: currently A is in CSR form
-    U_out = scipy.sparse.linalg.spsolve(A,rhs)
-
+    U_out = scipy.sparse.linalg.spsolve(A,b)
     t2 = perf_counter()
     dt = t2-t1
-    print('[scipy.sparse.linalg.spsolve] time',('%1.4e'%dt),'(sec)')
+#    print('[scipy.sparse.linalg.spsolve] time',('%1.4e'%dt),'(sec)')
     
     return U_out

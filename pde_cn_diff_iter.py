@@ -17,12 +17,12 @@ class CN_Diffusion(pb.PDEBase):
         self.N = 128 # number of grid points
  
         self.L = float(1) # length of grid
-        self.nt = 24 # number of time steps
 
         # define initial condition
         h = self.L/(self.N-1)
         self.coor = np.zeros((self.N, 1)) # is having both of these lines really necessary?
         self.coor[:,0] = np.linspace(0,self.N-1,self.N)*h
+        # move this outside and pass into step
         self.u0 = 0.5*np.exp(-(self.coor[:,0]-0.5)**2 / (2*(1/8)**2))
         self.phi = np.zeros(self.N) # N is npoints in Dave's pdebase.py
         
@@ -38,34 +38,37 @@ class CN_Diffusion(pb.PDEBase):
         def g1(t):
             return 0 # for now
         
-        solver.cn_1D_diffusion(N,k,L,t,g0,g1,un)
-        
-        U = solver.cn_1D_diffusion(self.N,self.dt,self.L,self.nt,g0,g1,self.u0)
+        #solver.cn_1D_diffusion(N,k,L,t,g0,g1,un)
+        kappa = 1
+        U = solver.cn_1D_diffusion(self.N,self.dt,self.L,self.time,g0,g1,kappa,phi_k)
         print('phi_k norm:', np.linalg.norm(phi_k))
         return U
         
 def test_pde_cn():
     pde = CN_Diffusion()
-    pde.step()
-    
-    U = pde.get_solution()
-    print('Solution: ', U)
-    print('solution norm', np.linalg.norm(U))
-
+    for i in range(10):
+        pde.step()
+        U = pde.get_solution()
+        print('Solution: ', U)
+        print('solution norm', np.linalg.norm(U))
 
 def test_cn():
-    N = 512 # number of grid points
-    k = 1e-4 # time step
-    L = float(20) # length of grid
-    nt = 100 # number of time steps
+    c = int(2)
+    N = int(128*c) # number of grid points
+    k = 1e-4/c # time step
+    L = float(2) # length of grid
+    nt = int(1000*c) # number of time steps
     kappa = 1
+    
+    def true(x,t):
+        return (1.0/(1.0+4.0*t)**(1.0/2.0))*np.exp(-x**2/(1.0+4.0*t))
 
     # define boundary conditions
     def g0(t):
-        return 0 # 2 for other ic
+        return true(-1.0,np.float(t)) # 2 for other ic
 
     def g1(t):
-        return 0 # 1.5 for other ic
+        return true(1.0,np.float(t)) # 1.5 for other ic
     
     # define initial condition
 #    h = L/(N-1)
@@ -77,23 +80,21 @@ def test_cn():
     # define initial condition
     x = np.linspace(-L/2,L/2,N)
     u0 = np.exp(-x**2)
-    
-    def true(x,t):
-        return 1/(1+4*t)**(1/2)*np.exp(-x**2/(1+4*t))
 
     un = u0
-    t = 0
+    t = 0.0
     for j in range((nt)):
         un = solver.cn_1D_diffusion(N,k,L,t,g0,g1,kappa,un)
-        
-        print('error: ', np.linalg.norm(un-true(x,t)))
         t += k
-        plt.clf()
-        plt.ylim(0,1)
-        plt.plot(x,un)
-        plt.title(['t =', t])
-        plt.show()
+    plt.clf()
+    plt.ylim(0,1)
+    plt.plot(x,un,color='blue')
+    plt.scatter(x,true(x,t),marker='o',color='orange')
+    plt.title(['t =', t])
+    plt.show()
 
+    nrm = np.linalg.norm(un-true(x,t))
+    print('Norm',('%1.4e'%nrm))
 
 if __name__ == '__main__':
     test_cn()
