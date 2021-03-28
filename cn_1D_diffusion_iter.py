@@ -6,7 +6,8 @@ A function that can be called to implement Crank-Nicolson (implicit, 2nd order
 in both space and time, as efficient as explicit) to solve the 1D diffusion 
 equation on the domain (0,L). 
 
-Inputs: N: number of grid points
+Inputs: 
+N: number of grid points
 dt: time step
 L: length of grid
 t: current time step number
@@ -32,7 +33,7 @@ def cn_1D_diffusion(N,dt,L,t,g0,g1,kappa,un):
     h = L/(N-1) # space step size
     r = dt*kappa/(2*h**2) # define r, later used in matrix system
     
-    # settin up matrices for A x = b system
+    # setting up matrices for A x = b system
     # A is a tridiagonal and sparse matrix in CSR format
     rs = np.zeros(N-1) # for the off diagonals
     rs[1:-1] += r # add r to interior rows only
