@@ -26,7 +26,6 @@ u0 = 0.5*np.exp(-(x-0.5)**2 / (2*(1/8)**2))
 
 U = solver.cn_1D_diffusion(N,k,L,nt,g0,g1,u0)
 
-
 plt.clf()
 plt.ylim(0,0.5)
 plt.plot(x,U[:,10])
