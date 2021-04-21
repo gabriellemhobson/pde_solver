@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 13 10:13:54 2021
-
-@author: ghobson
+A solver for the 1D pure advection equation using the Lax-Wendroff method.
+Reference: Leveque's Finite Volume Methods for Hyperbolic Problems, Ch 6'
 """
 
 def advection_1D_lax_wendroff(N,dt,L,t,A,q0):
@@ -18,7 +17,7 @@ def advection_1D_lax_wendroff(N,dt,L,t,A,q0):
     
     q = q0
     qn = np.zeros(len(q0))
-
+    
     qn[0] = q[0] - (dt/(2*dx))*A*(q[1] - q[-1]) + 0.5*(dt/dx)**2 * A**2 *(q[-1] - 2*q[0] + q[1]) # periodic bc
     qn[-1] = q[-1] - (dt/(2*dx))*A*(q[0] - q[-2]) + 0.5*(dt/dx)**2 * A**2 *(q[-2] - 2*q[0] + q[0]) # what to do with bc? 
     for k in range(1,N-1):
