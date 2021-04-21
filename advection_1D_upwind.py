@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 20 11:20:03 2021
-
-@author: ghobson
+This code solves the 1D pure advection equation with the upwind scheme,
+with periodic bc. 
+The equation is: u_t + A*q_x = 0. 
+This scheme is 1st order convergent. 
 """
 
 def advection_1D_upwind(N,dt,L,t,A,q0):
