@@ -163,8 +163,6 @@ class Burgers_Solver(object):
         """
         Solving the Riemann problem.
         
-        Had to move away from np.where due to error:
-        RecursionError: maximum recursion depth exceeded while calling a Python object
         """
         # shock speed for Burgers equation
         s = 0.5*(ul + ur)
@@ -183,28 +181,39 @@ class Burgers_Solver(object):
         ushock = np.where(s == 0.0, 0.0, ushock)
         #ushock = ushock1
         # rarefaction solution
+        '''
         urare = np.zeros((len(ur)))
         for i in range((len(ur))):
             if ur[i] <= 0.0:
                 urare[i] = ur[i]
             else: 
                 urare[i] = 0.0
-        # urare = np.where(ur <= 0.0, ur, 0.0)
+        '''
+        urare = np.where(ur <= 0.0, ur, 0.0)
+        '''
         for i in range((len(ur))):
             if ul[i] >= 0.0:
                 urare[i] = ul[i]
             else: 
                 urare[i] = urare[i]
-        #urare = np.where(ul >= 0.0, ul, urare)
+        '''
+        urare = np.where(ul >= 0.0, ul, urare)
+        '''
         us = np.zeros((len(urare)))
         for i in range(len(us)):
             if ul[i] > ur[i]:
                 us[i] = ushock[i]
             else:
                 us[i] = urare[i]
-        #us = np.where(ul > ur, ushock, urare)
+        '''
+        us = np.where(ul > ur, ushock, urare)
 
         return 0.5*us*us # f(u) for burgers equation
+    
+    
+        ###########################################
+        # local Lax-Friedrich flux
+        #a = np.max()
     
     def update(self, dt, flux):
         """ conservative update """
