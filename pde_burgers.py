@@ -76,6 +76,8 @@ class Burgers_Solver(object):
         self.grid = grid
         self.t = 0.0
         
+        self.flux_method = "rusanov"
+        
     def init_cond(self, type="rarefaction"):
 
         if type == "sine":
@@ -166,54 +168,29 @@ class Burgers_Solver(object):
         """
         # shock speed for Burgers equation
         s = 0.5*(ul + ur)
-        # piecewise function, see Zingale eqns 6.14, 6.15
-        """
-        ushock = np.zeros((len(s)))
-        for i in range((len(s))):
-            if s[i] > 0.0:
-                ushock[i] = ul[i]
-            elif s[i] == 0.0:
-                ushock[i] = 0.0
-            else:
-                ushock[i] = ur[i]
-        """
-        ushock = np.where(s > 0.0, ul, ur)
-        ushock = np.where(s == 0.0, 0.0, ushock)
-        #ushock = ushock1
-        # rarefaction solution
-        '''
-        urare = np.zeros((len(ur)))
-        for i in range((len(ur))):
-            if ur[i] <= 0.0:
-                urare[i] = ur[i]
-            else: 
-                urare[i] = 0.0
-        '''
-        urare = np.where(ur <= 0.0, ur, 0.0)
-        '''
-        for i in range((len(ur))):
-            if ul[i] >= 0.0:
-                urare[i] = ul[i]
-            else: 
-                urare[i] = urare[i]
-        '''
-        urare = np.where(ul >= 0.0, ul, urare)
-        '''
-        us = np.zeros((len(urare)))
-        for i in range(len(us)):
-            if ul[i] > ur[i]:
-                us[i] = ushock[i]
-            else:
-                us[i] = urare[i]
-        '''
-        us = np.where(ul > ur, ushock, urare)
-
-        return 0.5*us*us # f(u) for burgers equation
-    
-    
-        ###########################################
-        # local Lax-Friedrich flux
-        #a = np.max()
+        
+        if self.flux_method == "MC":
+            # piecewise function, see Zingale eqns 6.14, 6.15
+            ushock = np.where(s > 0.0, ul, ur)
+            ushock = np.where(s == 0.0, 0.0, ushock)
+            # rarefaction solution
+            urare = np.where(ur <= 0.0, ur, 0.0)
+            urare = np.where(ul >= 0.0, ul, urare)
+            us = np.where(ul > ur, ushock, urare)
+            return 0.5*us*us # f(u) for burgers equation
+        elif self.flux_method == "rusanov":
+            # local Lax-Friedrich flux
+            g = self.grid
+            a = np.zeros((g.N+2*g.ng))
+            for i in range(g.ng,2*g.ng+g.N):
+                a[i] = np.maximum(g.u[i-1],g.u[i]) # had to shift indexing up by one here
+            
+            F = np.zeros((g.N+2*g.ng))
+            for i in range(g.ng,2*g.ng+g.N):
+                F[i] = (1/2)*( (1/2)*(g.u[i-1])**2 + (1/2)*(g.u[i])**2 - a[i]*(g.u[i] - g.u[i-1]))
+            return F
+        else:
+            print('Error in riemann problem')
     
     def update(self, dt, flux):
         """ conservative update """
