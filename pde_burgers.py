@@ -9,9 +9,8 @@ Created on Mon Apr 26 16:38:41 2021
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Solving the 1D advection equation using the Lax-Wendroff method. This method 
-should be 2nd order accurate. The initial condition given here is a step
-function on the interval (0,L). 
+Solving the 1D Burgers equation using 2nd order MC limiters, with periodic bc.
+Two initial conditions are included, a sine wave and a rarefaction wave.  
 """
 # importing packages
 import numpy as np 
@@ -157,6 +156,7 @@ class Burgers_Solver(object):
         # shock speed for Burgers equation
         s = 0.5*(ul + ur)
         # piecewise function, see Zingale eqns 6.14, 6.15
+        """
         ushock = np.zeros((len(s)))
         for i in range((len(s))):
             if s[i] > 0.0:
@@ -165,9 +165,10 @@ class Burgers_Solver(object):
                 ushock[i] = 0.0
             else:
                 ushock[i] = ur[i]
-        # ushock = np.where(s > 0.0, ul, ur)
-        # ushock = np.where(s == 0.0, 0.0, ushock)
-
+        """
+        ushock = np.where(s > 0.0, ul, ur)
+        ushock = np.where(s == 0.0, 0.0, ushock)
+        #ushock = ushock1
         # rarefaction solution
         urare = np.zeros((len(ur)))
         for i in range((len(ur))):
@@ -198,7 +199,8 @@ class Burgers_Solver(object):
         g = self.grid
 
         un = np.zeros((g.N+2*g.ng))
-
+        
+        # see Zingale 5.16, Leveque (?)
         un[g.ng:g.ng+g.N] = g.u[g.ng:g.ng+g.N] + \
             dt/g.dx * (flux[g.ng:g.ng+g.N] - flux[g.ng+1:g.ng+g.N+1])
 
@@ -219,11 +221,6 @@ class Burgers_Solver(object):
         # timestep constraint must consider most restrictive Courant
         # condition over all cells
         dt = C*g.dx/max(abs(g.u[g.ng:g.ng+g.N]))
-
-        '''
-        if (self.t + dt > tmax):
-            dt = tmax - self.t
-        '''
 
         # compute ul and ur based on dt
         ul, ur = self.compute_ul_ur(dt)
@@ -248,7 +245,7 @@ def burgers_sine_example():
 
     s = Burgers_Solver(g)
     
-    nt = 120 # choose the number of time steps
+    nt = 240 # choose the number of time steps
     s.init_cond("sine")
     
     plt.clf()
@@ -274,7 +271,7 @@ def burgers_rarefaction_example():
 
     s = Burgers_Solver(g)
     
-    nt = 120 # choose the number of time steps
+    nt = 240 # choose the number of time steps
     s.init_cond("rarefaction")
     
     plt.clf()
