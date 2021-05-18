@@ -9,7 +9,8 @@ Created on Mon Apr 26 16:38:41 2021
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Solving the 1D Burgers equation using 2nd order MC limiters, with periodic bc.
+Solving the 1D inviscid Burgers equation using finite volumes with 2nd order 
+MC limiters,with periodic bc.
 Two initial conditions are included, a sine wave and a rarefaction wave.  
 """
 # importing packages
@@ -21,7 +22,7 @@ import pdebase as pb
 
 class Burgers_1D(pb.PDEBase):
 
-    def __init__(self):
+    def __init__(self,bc_name="outflow"):
     
         pb.PDEBase.__init__(self, "Burgers_1D", ['k'], [1.0])
     
@@ -31,6 +32,8 @@ class Burgers_1D(pb.PDEBase):
         self.xmax = 1
         self.dt = 1e-4 # time step
         
+        self.bc_name = bc_name
+        
         self.dx = (self.xmax-self.xmin)/self.N
         self.x = np.zeros((self.N+2*self.ng))
         self.x[:] = self.xmin + (np.arange(self.N+2*self.ng) - self.ng+0.5)*self.dx # x space grid
@@ -38,11 +41,21 @@ class Burgers_1D(pb.PDEBase):
         self.u = np.zeros((self.N+2*self.ng)) # initialize empty solution
     
     def fill_BCs(self):
-        # periodic boundary conditions
-        # left boundary
-        self.u[0:self.ng] = self.u[(self.ng+self.N-1)-self.ng+1:(self.ng+self.N-1)+1]
-        # right boundary
-        self.u[self.ng+self.N:] = self.u[self.ng:self.ng + self.ng]
+        
+        if self.bc_name == "periodic":
+            # periodic boundary conditions
+            # left boundary
+            self.u[0:self.ng] = self.u[(self.ng+self.N-1)-self.ng+1:(self.ng+self.N-1)+1]
+            # right boundary
+            self.u[self.ng+self.N:] = self.u[self.ng:self.ng + self.ng]
+        elif self.bc_name == "outflow":
+            # outflow bc
+            # left boundary
+            self.u[0:self.ng] = self.u[self.ng]
+            # right boundary
+            self.u[self.ng+self.N:] = self.u[self.ng+self.N-1]
+        else:
+            print('Error in fill_BCs()')
 
     """   
     def scratch_array(self):
@@ -239,7 +252,7 @@ class Burgers_Solver(object):
         
 def burgers_sine_example():
     
-    g = Burgers_1D()
+    g = Burgers_1D(bc_name="outflow")
 
     C = 0.8 # not sure why this is passed into courant number computation?
 
@@ -265,9 +278,9 @@ def burgers_sine_example():
         
 def burgers_rarefaction_example():
     
-    g = Burgers_1D()
+    g = Burgers_1D(bc_name="outflow")
 
-    C = 0.8 # not sure why this is passed into courant number computation?
+    C = 0.8 
 
     s = Burgers_Solver(g)
     
@@ -291,5 +304,5 @@ def burgers_rarefaction_example():
 
 
 if __name__ == '__main__':
-#    burgers_sine_example()
-    burgers_rarefaction_example()
+    burgers_sine_example()
+#    burgers_rarefaction_example()
